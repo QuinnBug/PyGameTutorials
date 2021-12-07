@@ -1,4 +1,4 @@
-from GameClasses import Vector, Game
+from GameClasses import Vector
 import pygame as pg
 
 
@@ -26,26 +26,51 @@ class PhysicsObject(GameObject):
     def __init__(self, x, y, scale, img_file):
         super().__init__(x, y, scale, img_file)
         self.gravity = Vector(0, 0)
-        self.speed = Vector(0, 0)
         self.velocity = Vector(0, 0)
+        self.drag = 0
         self.move_boundary = Vector(0, 0)
 
-    def set_physics(self, gravity):
+    def set_physics(self, bounds, gravity, drag):
+        self.move_boundary = bounds
         self.gravity = gravity
+        self.drag = drag
 
     def update(self, delta_time):
-        self.velocity.add(self.gravity)
+        super().update(delta_time)
+        self.velocity = self.velocity.add(self.gravity.multiply(delta_time))
+        self.move()
+
+    def move(self):
+        self.velocity.lerp(Vector(0, 0), self.velocity.magnitude() * self.drag * self.delta_time)
+
+        target = Vector(self.position.x + self.velocity.x,
+                        self.position.y + self.velocity.y)
+
+        if target.x > self.move_boundary.x or target.x < 0:
+            target.x = self.rect.center[0]
+            self.velocity.x *= -0.75
+
+        if target.y > self.move_boundary.y or target.y < 0:
+            target.y = self.rect.center[1]
+            self.velocity.y *= -0.75
+
+        self.position = Vector(target.x, target.y)
 
 
 class Player(PhysicsObject):
     def __init__(self, x, y, scale, img_file):
         super().__init__(x, y, scale, img_file)
         self.input = Vector(0, 0)
+        self.speed = Vector(0, 0)
+
+    def set_player_stats(self, bounds, speed, gravity, drag):
+        super().set_physics(bounds, gravity, drag)
+        self.speed = speed
 
     def update(self, delta_time):
         super().update(delta_time)
         self.check_inputs()
-        self.move()
+        self.update_velocity()
 
     def check_inputs(self):
         readd_events = []
@@ -75,29 +100,8 @@ class Player(PhysicsObject):
         for event in readd_events:
             pg.event.post(event)
 
-    def move(self):
+    def update_velocity(self):
         x_speed = self.speed.x * self.delta_time
         y_speed = self.speed.y * self.delta_time
         self.velocity.x += self.input.x * x_speed
         self.velocity.y += self.input.y * y_speed
-
-        self.velocity.lerp(Vector(0, 0), self.velocity.magnitude() * (0.1 * self.delta_time))
-
-        if self.velocity.magnitude() <= 0.05 and self.input.magnitude() == 0:
-            self.velocity = self.velocity.multiply(Vector(0, 0))
-
-        target = Vector(self.position.x + self.velocity.x,
-                        self.position.y + self.velocity.y)
-
-        if target.x > self.move_boundary.x or target.x < 0:
-            target.x = self.rect.center[0]
-            self.velocity.x *= -0.75
-
-        if target.y > self.move_boundary.y or target.y < 0:
-            target.y = self.rect.center[1]
-            self.velocity.y *= -0.75
-
-        self.position = Vector(target.x, target.y)
-
-    # def draw(self, screen):
-    #     super().draw(screen)

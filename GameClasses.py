@@ -11,8 +11,8 @@ class Game:
         self.run = True
         self.game_objs = []
         self.screen_size = Vector(width, height)
-        self.center = Vector(width/2, height/2)
-        self.FPS = 999
+        self.center = Vector(width / 2, height / 2)
+        self.FPS = 100
         self.clock = pg.time.Clock()
 
     def update(self):
@@ -25,7 +25,6 @@ class Game:
         self.screen.fill((0, 0, 0))
         for obj in self.game_objs:
             obj.draw(self.screen)
-            # self.screen.blit(obj.image, obj.rect)
         pygame.display.flip()
 
     def event_update(self):
@@ -64,9 +63,15 @@ class Vector:
                       self.z - other.z)
 
     def multiply(self, other):
-        return Vector(self.x * other.x,
-                      self.y * other.y,
-                      self.z * other.z)
+        try:
+            other = float(other)
+            return Vector(self.x * other,
+                          self.y * other,
+                          self.z * other)
+        except:
+            return Vector(self.x * other.x,
+                          self.y * other.y,
+                          self.z * other.z)
 
     def lerp(self, target, rate):
         if target.x > self.x:
